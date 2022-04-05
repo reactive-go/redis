@@ -186,3 +186,11 @@ func NewXPendingResult(val *XPending, err error) *XPendingCmd {
 	cmd.SetErr(err)
 	return &cmd
 }
+
+// NewXPendingResult returns a XPendingCmd initialised with val and err for testing.
+func NewXPendingResult(val *XPending, err error) *XPendingCmd {
+	var cmd XPendingCmd
+	cmd.val = val
+	cmd.SetErr(err)
+	return &cmd
+}
