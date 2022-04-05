@@ -6,6 +6,12 @@
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
 > go-redis is brought to you by :star: [**uptrace/uptrace**](https://github.com/uptrace/uptrace).
+<<<<<<< HEAD
+=======
+> Uptrace is an open source and blazingly fast
+> [distributed tracing tool](https://get.uptrace.dev/compare/distributed-tracing-tools.html) powered
+> by OpenTelemetry and ClickHouse. Give it a star as well!
+>>>>>>> chore: update links
 
 ## Resources
 
