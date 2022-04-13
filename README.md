@@ -21,7 +21,6 @@
 - [Reference](https://pkg.go.dev/github.com/go-redis/redis/v8?tab=doc)
 - [Examples](https://pkg.go.dev/github.com/go-redis/redis/v8?tab=doc#pkg-examples)
 
-
 ## Ecosystem
 
 - [Redis Mock](https://github.com/go-redis/redismock)
