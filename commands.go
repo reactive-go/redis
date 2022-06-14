@@ -3,11 +3,11 @@ package redis
 import (
 	"context"
 	"errors"
-	"github.com/go-redis/redis/v9/internal/proto"
 	"io"
 	"time"
 
 	"github.com/go-redis/redis/v9/internal"
+	"github.com/go-redis/redis/v9/internal/proto"
 )
 
 // Reader is exposed to library users in order to parse raw redis replies on their own
