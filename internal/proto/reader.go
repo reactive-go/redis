@@ -2,6 +2,7 @@ package proto
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 
@@ -137,6 +138,20 @@ func (r *Reader) ReadIntReply() (int64, error) {
 	}
 }
 
+func (r *Reader) ReadStringBuffered(buf []byte) (int, error) {
+	line, err := r.ReadLine()
+	if err != nil {
+		return -1, err
+	}
+
+	switch line[0] {
+	case StringReply:
+		return r.readStringReplyBuffered(line, buf)
+	default:
+		return -1, fmt.Errorf("redis: can't parse reply=%.100q reading string", line)
+	}
+}
+
 func (r *Reader) ReadString() (string, error) {
 	line, err := r.ReadLine()
 	if err != nil {
@@ -154,6 +169,29 @@ func (r *Reader) ReadString() (string, error) {
 	default:
 		return "", fmt.Errorf("redis: can't parse reply=%.100q reading string", line)
 	}
+}
+
+func (r *Reader) readStringReplyBuffered(line []byte, buf []byte) (int, error) {
+	if isNilReply(line) {
+		return -1, Nil
+	}
+
+	replyLen, err := util.Atoi(line[1:])
+	if err != nil {
+		return -1, err
+	}
+	if replyLen+2 > len(buf) {
+		// TODO: worth improving error messaging to notify user about small buffer
+		return -1, errors.New("redis: string buffer is too small")
+	}
+
+	_, err = io.ReadFull(r.rd, buf[:replyLen+2])
+	if err != nil {
+		return -1, err
+	}
+
+	// the last two symbols of a redis string are '\r\n'
+	return replyLen, nil
 }
 
 func (r *Reader) readStringReply(line []byte) (string, error) {
