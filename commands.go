@@ -7,7 +7,11 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8/internal"
+	"github.com/go-redis/redis/v8/internal/proto"
 )
+
+// Reader is exposed to library users in order to parse raw redis replies on their own
+type Reader = proto.Reader
 
 // KeepTTL is a Redis KEEPTTL option to keep existing TTL, it requires your redis-server version >= 6.0,
 // otherwise you will receive an error: (error) ERR syntax error.
@@ -165,6 +169,7 @@ type Cmdable interface {
 	HExists(ctx context.Context, key, field string) *BoolCmd
 	HGet(ctx context.Context, key, field string) *StringCmd
 	HGetAll(ctx context.Context, key string) *StringStringMapCmd
+	HGetAllWithCustomReader(ctx context.Context, key string, customReader func(*Reader) error) *CustomCmd
 	HIncrBy(ctx context.Context, key, field string, incr int64) *IntCmd
 	HIncrByFloat(ctx context.Context, key, field string, incr float64) *FloatCmd
 	HKeys(ctx context.Context, key string) *StringSliceCmd
@@ -1231,6 +1236,12 @@ func (c cmdable) HGet(ctx context.Context, key, field string) *StringCmd {
 
 func (c cmdable) HGetAll(ctx context.Context, key string) *StringStringMapCmd {
 	cmd := NewStringStringMapCmd(ctx, "hgetall", key)
+	_ = c(ctx, cmd)
+	return cmd
+}
+
+func (c cmdable) HGetAllWithCustomReader(ctx context.Context, key string, customReader func(*Reader) error) *CustomCmd {
+	cmd := NewCustomCmd(ctx, customReader, "hgetall", key)
 	_ = c(ctx, cmd)
 	return cmd
 }
