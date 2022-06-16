@@ -13,6 +13,11 @@ import (
 // Reader is exposed to library users in order to parse raw redis replies on their own
 type Reader = proto.Reader
 
+// NewReader is exposed to usability along with Reader
+func NewReader(rd io.Reader) *Reader {
+	return proto.NewReader(rd)
+}
+
 // KeepTTL is a Redis KEEPTTL option to keep existing TTL, it requires your redis-server version >= 6.0,
 // otherwise you will receive an error: (error) ERR syntax error.
 // For example:
