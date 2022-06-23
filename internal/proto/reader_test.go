@@ -67,6 +67,38 @@ func TestReader_BufferedRead(t *testing.T) {
 	}
 }
 
+type writer struct {
+	data []byte
+}
+
+func (w *writer) Write(p []byte) (n int, err error) {
+	w.data = append(w.data, p...)
+	return len(p), nil
+}
+
+func TestReader_WriterRead(t *testing.T) {
+	srcStr := "abcdef"
+	readerBuf := []byte(fmt.Sprintf("$%v\r\n%v\r\n", len(srcStr), srcStr))
+	r := proto.NewReader(bytes.NewReader(readerBuf))
+
+	var wr writer
+	strLen, err := r.ReadStringToWriter(&wr)
+	if err != nil {
+		t.Errorf("Should be no error: %v", err)
+		return
+	}
+	if strLen != len(srcStr) {
+		t.Errorf("Resulting string length should be equal to %v, actual %v", len(srcStr), strLen)
+		return
+	}
+
+	resultStr := string(wr.data)
+	if resultStr != srcStr {
+		t.Errorf("Expected string '%v', actual '%v'", srcStr, resultStr)
+		return
+	}
+}
+
 func benchmarkParseReply(b *testing.B, reply string, m proto.MultiBulkParse, wanterr bool) {
 	buf := new(bytes.Buffer)
 	for i := 0; i < b.N; i++ {
