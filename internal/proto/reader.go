@@ -138,6 +138,20 @@ func (r *Reader) ReadIntReply() (int64, error) {
 	}
 }
 
+func (r *Reader) ReadStringToWriter(wr io.Writer) (int, error) {
+	line, err := r.ReadLine()
+	if err != nil {
+		return -1, err
+	}
+
+	switch line[0] {
+	case StringReply:
+		return r.readStringReplyToWriter(line, wr)
+	default:
+		return -1, fmt.Errorf("redis: can't parse reply=%.100q reading string", line)
+	}
+}
+
 func (r *Reader) ReadStringBuffered(buf []byte) (int, error) {
 	line, err := r.ReadLine()
 	if err != nil {
@@ -169,6 +183,29 @@ func (r *Reader) ReadString() (string, error) {
 	default:
 		return "", fmt.Errorf("redis: can't parse reply=%.100q reading string", line)
 	}
+}
+
+func (r *Reader) readStringReplyToWriter(line []byte, output io.Writer) (int, error) {
+	if isNilReply(line) {
+		return -1, Nil
+	}
+
+	replyLen, err := util.Atoi(line[1:])
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = io.CopyN(output, r.rd, int64(replyLen))
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = r.rd.Discard(2)
+	if err != nil {
+		return -1, err
+	}
+
+	return replyLen, nil
 }
 
 func (r *Reader) readStringReplyBuffered(line []byte, buf []byte) (int, error) {
