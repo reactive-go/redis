@@ -221,7 +221,6 @@ type Cmdable interface {
 	SIsMember(ctx context.Context, key string, member interface{}) *BoolCmd
 	SMIsMember(ctx context.Context, key string, members ...interface{}) *BoolSliceCmd
 	SMembers(ctx context.Context, key string) *StringSliceCmd
-	SMembersWithCustomReader(ctx context.Context, key string, customReader func(*Reader) error) *CustomCmd
 	SMembersMap(ctx context.Context, key string) *StringStructMapCmd
 	SMove(ctx context.Context, source, destination string, member interface{}) *BoolCmd
 	SPop(ctx context.Context, key string) *StringCmd
@@ -1653,12 +1652,6 @@ func (c cmdable) SMIsMember(ctx context.Context, key string, members ...interfac
 // SMembers Redis `SMEMBERS key` command output as a slice.
 func (c cmdable) SMembers(ctx context.Context, key string) *StringSliceCmd {
 	cmd := NewStringSliceCmd(ctx, "smembers", key)
-	_ = c(ctx, cmd)
-	return cmd
-}
-
-func (c cmdable) SMembersWithCustomReader(ctx context.Context, key string, customReader func(*Reader) error) *CustomCmd {
-	cmd := NewCustomCmd(ctx, customReader, "smembers", key)
 	_ = c(ctx, cmd)
 	return cmd
 }
