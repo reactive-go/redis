@@ -184,6 +184,7 @@ type Cmdable interface {
 	HMSet(ctx context.Context, key string, values ...interface{}) *BoolCmd
 	HSetNX(ctx context.Context, key, field string, value interface{}) *BoolCmd
 	HVals(ctx context.Context, key string) *StringSliceCmd
+	HValsWithCustomReader(ctx context.Context, key string, customReader func(*Reader) error) *CustomCmd
 	HRandField(ctx context.Context, key string, count int, withValues bool) *StringSliceCmd
 
 	BLPop(ctx context.Context, timeout time.Duration, keys ...string) *StringSliceCmd
@@ -1328,6 +1329,12 @@ func (c cmdable) HSetNX(ctx context.Context, key, field string, value interface{
 
 func (c cmdable) HVals(ctx context.Context, key string) *StringSliceCmd {
 	cmd := NewStringSliceCmd(ctx, "hvals", key)
+	_ = c(ctx, cmd)
+	return cmd
+}
+
+func (c cmdable) HValsWithCustomReader(ctx context.Context, key string, customReader func(*Reader) error) *CustomCmd {
+	cmd := NewCustomCmd(ctx, customReader, "hvals", key)
 	_ = c(ctx, cmd)
 	return cmd
 }
