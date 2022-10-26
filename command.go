@@ -1183,6 +1183,10 @@ func (cmd *CustomCmd) String() string {
 	return cmdString(cmd, cmd.customReader)
 }
 
+func (cmd *CustomCmd) Result() error {
+	return cmd.err
+}
+
 func (cmd *CustomCmd) readReply(rd *proto.Reader) error {
 	return cmd.customReader(rd)
 }
