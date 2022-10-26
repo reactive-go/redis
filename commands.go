@@ -22,7 +22,7 @@ func NewReader(rd io.Reader) *Reader {
 // otherwise you will receive an error: (error) ERR syntax error.
 // For example:
 //
-//    rdb.Set(ctx, key, value, redis.KeepTTL)
+// rdb.Set(ctx, key, value, redis.KeepTTL)
 const KeepTTL = -1
 
 func usePrecise(dur time.Duration) bool {
@@ -272,14 +272,14 @@ type Cmdable interface {
 	BZPopMin(ctx context.Context, timeout time.Duration, keys ...string) *ZWithKeyCmd
 
 	// TODO: remove
-	//		ZAddCh
-	//		ZIncr
-	//		ZAddNXCh
-	//		ZAddXXCh
-	//		ZIncrNX
-	//		ZIncrXX
-	// 	in v9.
-	// 	use ZAddArgs and ZAddArgsIncr.
+	//	        ZAddCh
+	//	        ZIncr
+	//	        ZAddNXCh
+	//	        ZAddXXCh
+	//	        ZIncrNX
+	//	        ZIncrXX
+	//	     in v9.
+	//	     use ZAddArgs and ZAddArgsIncr.
 
 	ZAdd(ctx context.Context, key string, members ...*Z) *IntCmd
 	ZAddNX(ctx context.Context, key string, members ...*Z) *IntCmd
@@ -303,6 +303,7 @@ type Cmdable interface {
 	ZPopMax(ctx context.Context, key string, count ...int64) *ZSliceCmd
 	ZPopMin(ctx context.Context, key string, count ...int64) *ZSliceCmd
 	ZRange(ctx context.Context, key string, start, stop int64) *StringSliceCmd
+	ZRangeWithCustomReader(ctx context.Context, key string, start, stop int64, customReader func(*Reader) error) *CustomCmd
 	ZRangeWithScores(ctx context.Context, key string, start, stop int64) *ZSliceCmd
 	ZRangeWithScoresWithCustomReader(ctx context.Context, key string, start, stop int64, customReader func(*Reader) error) *CustomCmd
 	ZRangeByScore(ctx context.Context, key string, opt *ZRangeBy) *StringSliceCmd
@@ -2074,8 +2075,10 @@ func xClaimArgs(a *XClaimArgs) []interface{} {
 
 // xTrim If approx is true, add the "~" parameter, otherwise it is the default "=" (redis default).
 // example:
-//		XTRIM key MAXLEN/MINID threshold LIMIT limit.
-//		XTRIM key MAXLEN/MINID ~ threshold LIMIT limit.
+//
+//	XTRIM key MAXLEN/MINID threshold LIMIT limit.
+//	XTRIM key MAXLEN/MINID ~ threshold LIMIT limit.
+//
 // The redis-server version is lower than 6.2, please set limit to 0.
 func (c cmdable) xTrim(
 	ctx context.Context, key, strategy string,
@@ -2323,10 +2326,11 @@ func (c cmdable) ZAddXX(ctx context.Context, key string, members ...*Z) *IntCmd 
 
 // ZAddCh Redis `ZADD key CH score member [score member ...]` command.
 // Deprecated: Use
-//		client.ZAddArgs(ctx, ZAddArgs{
-//			Ch: true,
-//			Members: []Z,
-//		})
+//
+//	    client.ZAddArgs(ctx, ZAddArgs{
+//	        Ch: true,
+//	        Members: []Z,
+//	    })
 //	remove in v9.
 func (c cmdable) ZAddCh(ctx context.Context, key string, members ...*Z) *IntCmd {
 	return c.zAdd(ctx, key, ZAddArgs{
@@ -2336,11 +2340,12 @@ func (c cmdable) ZAddCh(ctx context.Context, key string, members ...*Z) *IntCmd 
 
 // ZAddNXCh Redis `ZADD key NX CH score member [score member ...]` command.
 // Deprecated: Use
-//		client.ZAddArgs(ctx, ZAddArgs{
-//			NX: true,
-//			Ch: true,
-//			Members: []Z,
-//		})
+//
+//	    client.ZAddArgs(ctx, ZAddArgs{
+//	        NX: true,
+//	        Ch: true,
+//	        Members: []Z,
+//	    })
 //	remove in v9.
 func (c cmdable) ZAddNXCh(ctx context.Context, key string, members ...*Z) *IntCmd {
 	return c.zAdd(ctx, key, ZAddArgs{
@@ -2351,11 +2356,12 @@ func (c cmdable) ZAddNXCh(ctx context.Context, key string, members ...*Z) *IntCm
 
 // ZAddXXCh Redis `ZADD key XX CH score member [score member ...]` command.
 // Deprecated: Use
-//		client.ZAddArgs(ctx, ZAddArgs{
-//			XX: true,
-//			Ch: true,
-//			Members: []Z,
-//		})
+//
+//	    client.ZAddArgs(ctx, ZAddArgs{
+//	        XX: true,
+//	        Ch: true,
+//	        Members: []Z,
+//	    })
 //	remove in v9.
 func (c cmdable) ZAddXXCh(ctx context.Context, key string, members ...*Z) *IntCmd {
 	return c.zAdd(ctx, key, ZAddArgs{
@@ -2366,9 +2372,10 @@ func (c cmdable) ZAddXXCh(ctx context.Context, key string, members ...*Z) *IntCm
 
 // ZIncr Redis `ZADD key INCR score member` command.
 // Deprecated: Use
-//		client.ZAddArgsIncr(ctx, ZAddArgs{
-//			Members: []Z,
-//		})
+//
+//	    client.ZAddArgsIncr(ctx, ZAddArgs{
+//	        Members: []Z,
+//	    })
 //	remove in v9.
 func (c cmdable) ZIncr(ctx context.Context, key string, member *Z) *FloatCmd {
 	return c.ZAddArgsIncr(ctx, key, ZAddArgs{
@@ -2378,10 +2385,11 @@ func (c cmdable) ZIncr(ctx context.Context, key string, member *Z) *FloatCmd {
 
 // ZIncrNX Redis `ZADD key NX INCR score member` command.
 // Deprecated: Use
-//		client.ZAddArgsIncr(ctx, ZAddArgs{
-//			NX: true,
-//			Members: []Z,
-//		})
+//
+//	    client.ZAddArgsIncr(ctx, ZAddArgs{
+//	        NX: true,
+//	        Members: []Z,
+//	    })
 //	remove in v9.
 func (c cmdable) ZIncrNX(ctx context.Context, key string, member *Z) *FloatCmd {
 	return c.ZAddArgsIncr(ctx, key, ZAddArgs{
@@ -2392,10 +2400,11 @@ func (c cmdable) ZIncrNX(ctx context.Context, key string, member *Z) *FloatCmd {
 
 // ZIncrXX Redis `ZADD key XX INCR score member` command.
 // Deprecated: Use
-//		client.ZAddArgsIncr(ctx, ZAddArgs{
-//			XX: true,
-//			Members: []Z,
-//		})
+//
+//	    client.ZAddArgsIncr(ctx, ZAddArgs{
+//	        XX: true,
+//	        Members: []Z,
+//	    })
 //	remove in v9.
 func (c cmdable) ZIncrXX(ctx context.Context, key string, member *Z) *FloatCmd {
 	return c.ZAddArgsIncr(ctx, key, ZAddArgs{
@@ -2513,11 +2522,13 @@ func (c cmdable) ZPopMin(ctx context.Context, key string, count ...int64) *ZSlic
 
 // ZRangeArgs is all the options of the ZRange command.
 // In version> 6.2.0, you can replace the(cmd):
-//		ZREVRANGE,
-//		ZRANGEBYSCORE,
-//		ZREVRANGEBYSCORE,
-//		ZRANGEBYLEX,
-//		ZREVRANGEBYLEX.
+//
+//	ZREVRANGE,
+//	ZRANGEBYSCORE,
+//	ZREVRANGEBYSCORE,
+//	ZRANGEBYLEX,
+//	ZREVRANGEBYLEX.
+//
 // Please pay attention to your redis-server version.
 //
 // Rev, ByScore, ByLex and Offset+Count options require redis-server 6.2.0 and higher.
@@ -2528,23 +2539,23 @@ type ZRangeArgs struct {
 	// By default, the score intervals specified by <Start> and <Stop> are closed (inclusive).
 	// It is similar to the deprecated(6.2.0+) ZRangeByScore command.
 	// For example:
-	//		ZRangeArgs{
-	//			Key: 				"example-key",
-	//	 		Start: 				"(3",
-	//	 		Stop: 				8,
-	//			ByScore:			true,
-	//	 	}
-	// 	 	cmd: "ZRange example-key (3 8 ByScore"  (3 < score <= 8).
+	//			ZRangeArgs{
+	//				Key:				 "example-key",
+	//				 Start:				 "(3",
+	//				 Stop:				 8,
+	//				ByScore:			true,
+	//			 }
+	//			  cmd: "ZRange example-key (3 8 ByScore"  (3 < score <= 8).
 	//
 	// For the ByLex option, it is similar to the deprecated(6.2.0+) ZRangeByLex command.
 	// You can set the <Start> and <Stop> options as follows:
-	//		ZRangeArgs{
-	//			Key: 				"example-key",
-	//	 		Start: 				"[abc",
-	//	 		Stop: 				"(def",
-	//			ByLex:				true,
-	//	 	}
-	//		cmd: "ZRange example-key [abc (def ByLex"
+	//			ZRangeArgs{
+	//				Key:				 "example-key",
+	//				 Start:				 "[abc",
+	//				 Stop:				 "(def",
+	//				ByLex:				true,
+	//			 }
+	//			cmd: "ZRange example-key [abc (def ByLex"
 	//
 	// For normal cases (ByScore==false && ByLex==false), <Start> and <Stop> should be set to the index range (int).
 	// You can read the documentation for more information: https://redis.io/commands/zrange
@@ -2593,6 +2604,15 @@ func (c cmdable) ZRangeArgs(ctx context.Context, z ZRangeArgs) *StringSliceCmd {
 	return cmd
 }
 
+func (c cmdable) ZRangeArgsWithCustomReader(ctx context.Context, z ZRangeArgs, customReader func(*Reader) error) *CustomCmd {
+	args := make([]interface{}, 0, 9)
+	args = append(args, "zrange")
+	args = z.appendArgs(args)
+	cmd := NewCustomCmd(ctx, customReader, args...)
+	_ = c(ctx, cmd)
+	return cmd
+}
+
 func (c cmdable) ZRangeArgsWithScores(ctx context.Context, z ZRangeArgs) *ZSliceCmd {
 	args := make([]interface{}, 0, 10)
 	args = append(args, "zrange")
@@ -2619,6 +2639,16 @@ func (c cmdable) ZRange(ctx context.Context, key string, start, stop int64) *Str
 		Start: start,
 		Stop:  stop,
 	})
+}
+
+func (c cmdable) ZRangeWithCustomReader(ctx context.Context, key string, start, stop int64, customReader func(*Reader) error) *CustomCmd {
+	return c.ZRangeArgsWithCustomReader(ctx, ZRangeArgs{
+		Key:   key,
+		Start: start,
+		Stop:  stop,
+	},
+		customReader,
+	)
 }
 
 func (c cmdable) ZRangeWithScores(ctx context.Context, key string, start, stop int64) *ZSliceCmd {
@@ -2940,7 +2970,7 @@ func (c cmdable) ClientKill(ctx context.Context, ipPort string) *StatusCmd {
 
 // ClientKillByFilter is new style syntax, while the ClientKill is old
 //
-//   CLIENT KILL <option> [value] ... <option> [value]
+//	CLIENT KILL <option> [value] ... <option> [value]
 func (c cmdable) ClientKillByFilter(ctx context.Context, keys ...string) *IntCmd {
 	args := make([]interface{}, 2+len(keys))
 	args[0] = "client"
