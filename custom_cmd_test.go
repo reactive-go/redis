@@ -8,9 +8,9 @@ import (
 )
 
 // hgetallReader returns a custom reader that parses an HGETALL reply into
-// dst using only caller-owned buffers, the way a zero-allocation consumer
-// would. ReadMapLen accepts both the RESP3 map reply and the RESP2 flat
-// array reply.
+// dst, exercising the same caller-owned-buffer read path a real
+// HGetAllWithCustomReader consumer would use. ReadMapLen accepts both the
+// RESP3 map reply and the RESP2 flat array reply.
 func hgetallReader(dst map[string]string) func(*Reader) error {
 	return func(rd *Reader) error {
 		n, err := rd.ReadMapLen()

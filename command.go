@@ -1174,6 +1174,10 @@ func (cmd *CustomCmd) Result() error {
 	return cmd.err
 }
 
+// SetVal is a no-op: CustomCmd stores no parsed value of its own, since the
+// reader function writes results into caller-owned state instead.
+func (cmd *CustomCmd) SetVal() {}
+
 func (cmd *CustomCmd) String() string {
 	cmd.await()
 	return cmdString(cmd, nil)
@@ -1189,6 +1193,15 @@ func (cmd *CustomCmd) readReply(rd *proto.Reader) error {
 			return err
 		}
 		return fmt.Errorf("redis: CustomCmd cannot be cloned (reader function writes into caller-owned state)")
+	}
+	if cmd.customReader == nil {
+		// A nil reader function is a programming error, but panicking here
+		// would still leave the reply unread on a pooled connection. Drain
+		// it first so the connection stays aligned for the next command.
+		if err := rd.DiscardNext(); err != nil {
+			return err
+		}
+		return fmt.Errorf("redis: CustomCmd has a nil reader function")
 	}
 	return cmd.customReader(rd)
 }
